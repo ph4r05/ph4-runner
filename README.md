@@ -7,7 +7,7 @@ Simple python library wrapping [Sarge](https://pypi.org/project/sarge/)
 BoolTest is available via `pip`:
 
 ```
-pip3 install ph4-sarge
+pip3 install ph4-runner
 ```
 
 ## Local installation
