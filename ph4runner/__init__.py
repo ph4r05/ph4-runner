@@ -118,7 +118,7 @@ def win_ctrlc(tm=0):
 
 
 class AsyncRunner:
-    def __init__(self, cmd, args=None, stdout=None, stderr=None, cwd=None, shell=True, env=None):
+    def __init__(self, cmd, args=None, stdout=None, stderr=None, cwd=None, shell=True, env=None, stdin=None, **kwargs):
         self.cmd = cmd
         self.args = args
         self.on_finished = None
@@ -129,6 +129,7 @@ class AsyncRunner:
         self.log_out_after = True
         self.stdout = stdout
         self.stderr = stderr
+        self.stdin = stdin
         self.cwd = cwd
         self.shell = shell
         self.env = env
@@ -254,7 +255,7 @@ class AsyncRunner:
 
         p = run(
             cmd,
-            input=self.feeder,
+            input=self.stdin or self.feeder,
             async_=True,
             stdout=self.stdout or Capture(timeout=0.1, buffer_size=1),
             stderr=self.stderr or Capture(timeout=0.1, buffer_size=1),
