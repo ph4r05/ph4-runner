@@ -1,7 +1,7 @@
 from setuptools import setup
 from setuptools import find_packages
 
-version = '0.0.2'
+version = '0.0.3'
 
 install_requires = [
     'sarge>=0.1.4',
@@ -22,7 +22,7 @@ docs_extras = [
 
 try:
     import pypandoc
-    long_description = pypandoc.convert('README.md', 'rst')
+    long_description = pypandoc.convert_file('README.md', 'rst')
     long_description = long_description.replace("\r", '')
 
 except(IOError, ImportError):
