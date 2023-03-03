@@ -161,6 +161,12 @@ class AsyncRunner:
         self.terminate_timeout = 0.5
         self.signal_timeout = 0.5
         self.terminate_ctrlc_timeout = 0.5
+        self.capture_stdout_timeout = 0.1
+        self.capture_stdout_buffer = 1
+        self.capture_stderr_timeout = 0.1
+        self.capture_stderr_buffer = 1
+        self.wait_timeout = 0.1
+        self.exec_timeout = 0.1
         self.is_win = sys.platform.startswith('win')
 
     def run(self):
@@ -257,8 +263,8 @@ class AsyncRunner:
             cmd,
             input=self.stdin or self.feeder,
             async_=True,
-            stdout=self.stdout or Capture(timeout=0.1, buffer_size=1),
-            stderr=self.stderr or Capture(timeout=0.1, buffer_size=1),
+            stdout=self.stdout or Capture(timeout=self.capture_stdout_timeout, buffer_size=self.capture_stdout_buffer),
+            stderr=self.stderr or Capture(timeout=self.capture_stderr_timeout, buffer_size=self.capture_stderr_buffer),
             cwd=self.cwd,
             env=self.env,
             shell=self.shell,
@@ -316,7 +322,7 @@ class AsyncRunner:
 
         try:
             while len(p.commands) == 0:
-                time.sleep(0.15)
+                time.sleep(self.exec_timeout)
 
             logger.debug("Program started, progs: %s, pid: %s" % (len(p.commands), self.get_pid()))
             if p.commands[0] is None:
@@ -350,7 +356,7 @@ class AsyncRunner:
                 # If there is data, consume it right away.
                 if (self.using_stdout_cap and out) or (self.using_stderr_cap and err):
                     continue
-                time.sleep(0.15)
+                time.sleep(self.exec_timeout)
 
             try_fnc(lambda: p.commands[0].poll())
             self.ret_code = p.commands[0].returncode if p.commands[0] else -1
@@ -570,7 +576,7 @@ class AsyncRunner:
                 logger.debug("Trying to invoke CTRL+C (win) for %s (parent %s)" % (cpid, pid))
                 try:
                     try_fnc(lambda: os.kill(cpid, signal.CTRL_C_EVENT))
-                    time.sleep(0.1)
+                    time.sleep(self.wait_timeout)
                 except KeyboardInterrupt:
                     logger.debug("Keyboard interrupt _win_terminate_children")
 
@@ -599,7 +605,7 @@ class AsyncRunner:
             if timeout is not None and time.time() - tstart > timeout:
                 raise Exception("Timeout")
             try:
-                time.sleep(0.1)
+                time.sleep(self.wait_timeout)
             except KeyboardInterrupt:
                 logger.debug("Keyboard interrupt wait()")
 
@@ -623,7 +629,7 @@ class AsyncRunner:
             if timeout is not None and time.time() - tstart > timeout:
                 raise Exception("Timeout")
             try:
-                time.sleep(0.1)
+                time.sleep(self.wait_timeout)
             except KeyboardInterrupt:
                 logger.debug("Shutdown Keyboard interrupt loop")
 
@@ -633,7 +639,7 @@ class AsyncRunner:
     def start(self, wait_running=True, timeout=None):
         install_sarge_filter()
         self.thread = threading.Thread(target=self.run, args=())
-        self.thread.setDaemon(False)
+        self.thread.daemon = False
 
         self.terminating = False
         self.is_running = False
@@ -647,5 +653,5 @@ class AsyncRunner:
         while not self.is_running and not self.was_running:
             if timeout is not None and time.time() - tstart > timeout:
                 raise Exception("Timeout")
-            time.sleep(0.1)
+            time.sleep(self.wait_timeout)
         return self
